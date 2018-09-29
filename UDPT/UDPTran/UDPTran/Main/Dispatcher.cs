@@ -132,7 +132,7 @@ namespace UDPTran
             {
                 dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
 
-                Console.WriteLine(Encoding.UTF8.GetString(TempInfo)+AbReceiveEndPoint.ToString());
+                Console.WriteLine(Encoding.UTF8.GetString(TempInfo) + AbReceiveEndPoint.ToString());
             }
 
         }
@@ -167,52 +167,64 @@ namespace UDPTran
                 if (ReceivePool.ContainsKey(PackID))
                 {
                     dataPool = ReceivePool[PackID];
+
+                    dataPool.AddBytes(bytes);
+                    dataPool.CountPlus();
+                    dataPool.RefreshTime();
                 }
                 else
                 {
                     ReceivePool.Add(PackID, new DataPool(PackID, new Dictionary<int, byte[]>(), endPoint, 30000));
                     dataPool = ReceivePool[PackID];
+                    dataPool.AddBytes(bytes);
+                    dataPool.CountPlus();
+                    dataPool.RefreshTime();
                 }
             }
-            
 
-            dataPool.AddBytes(bytes);
-            dataPool.CountPlus();
-            dataPool.RefreshTime();
+
+
 
             //检测是否可以进行拼包操作
-            lock (this)
+
+            if (dataPool.Count == dataPool.TotalCount)
             {
-                if (CheckPackComplete(dataPool))
+                if (packetUtil.TotalCheckBool(dataPool.dic))
                 {
-                    if (packetUtil.TotalCheckBool(dataPool.dic))
-                    {
-                        byte[] TempleFile = packetUtil.PackIntoFile(dataPool.dic);
-                        //string s1 = Encoding.UTF8.GetString(TempleFile);
-                        FileStream f1 = File.Create(@"F:test.pdf");
+                    byte[] TempleFile = packetUtil.PackIntoFile(dataPool.dic);
+                    //string s1 = Encoding.UTF8.GetString(TempleFile);
+                    FileStream f1 = File.Create(@"F:test.txt");
 
-                        //Stream stream = f1;
-                        //StreamWriter sw = new StreamWriter(stream);
-                        //sw.Write(s1);
-                        //fs.Write(TempleFile, 0, TempleFile.Length);
-                        f1.Write(TempleFile, 0, TempleFile.Length);
-                        //sw.Close();
-                        //stream.Close();
-                        f1.Close();
-                        Console.WriteLine("finshed");
-                        //完成后删除相关接收缓冲池
-                        ReceivePool.Remove(PackID);
-                    }
-                    else
+                    //Stream stream = f1;
+                    //StreamWriter sw = new StreamWriter(stream);
+                    //sw.Write(s1);
+                    //fs.Write(TempleFile, 0, TempleFile.Length);
+                    int count = packetUtil.GetCount(dataPool.dic[0]);
+                    int contextLength = packetUtil.GetContexLength(dataPool.dic[0]);
+                    int i = 0;
+                    while(i<count-1)
                     {
-                        PackCheck = packetUtil.TotalCheck(dataPool.dic);
-                        ProcessLostPacket(PackCheck, dataPool.endPoint);
+                        f1.Write(dataPool.dic[i], 8, 2040);
+                        i++;
                     }
-
+                    f1.Write(dataPool.dic[count-1],8,contextLength);
+                    //sw.Close();
+                    //stream.Close();
+                    f1.Close();
+                    Console.WriteLine("finshed");
+                    //完成后删除相关接收缓冲池
+                    ReceivePool.Remove(PackID);
                 }
+                else
+                {
+                    PackCheck = packetUtil.TotalCheck(dataPool.dic);
+                    ProcessLostPacket(PackCheck, dataPool.endPoint);
+                }
+
             }
-            
-            
+
+
+
 
 
         }
@@ -270,10 +282,10 @@ namespace UDPTran
         /// <param name="ID"></param>
         /// <param name="Index"></param>
         /// <param name="RemoteEndPoint"></param>
-        private void ResendTo(int ID,int Index,EndPoint RemoteEndPoint)
+        private void ResendTo(int ID, int Index, EndPoint RemoteEndPoint)
         {
             byte[] bytes;
-            if(sendOutPool.ContainsKey(ID))
+            if (sendOutPool.ContainsKey(ID))
             {
                 bytes = sendOutPool[ID].dic[Index];
                 socket.SendTo(bytes, bytes.Length, SocketFlags.None, RemoteIPEndPoint);
@@ -284,7 +296,7 @@ namespace UDPTran
             }
         }
 
-        
+
         private void ProcessPreTag(object objects)
         {
             byte[] bytes = ((ReceiveData)objects).bytes;

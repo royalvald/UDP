@@ -37,7 +37,7 @@ namespace UDPTran
             //分包后放入list
             List<byte[]> list = new List<byte[]>();
             //分包暂存
-            byte[] bytes = new byte[2048];
+            
             //标志当前位置
             int position = 0;
             //当前文件生成的ID
@@ -53,6 +53,7 @@ namespace UDPTran
             Index = 0;//索引初始化
             while (position < Length)
             {
+                byte[] bytes = new byte[2048];
                 //先判断文件剩余长度
                 if (Length - position > 2040)
                 {
@@ -76,7 +77,7 @@ namespace UDPTran
                 position += ContextLength;
 
                 list.Add(bytes);
-                bytes.Initialize();
+                
             }
             return list;
         }
