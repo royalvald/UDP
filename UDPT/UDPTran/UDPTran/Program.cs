@@ -17,10 +17,11 @@ namespace UDPTran
 
             
             FileStream fs = new FileStream(@"F:\f1.pdf", FileMode.Open);
-            StreamReader sr = new StreamReader(fs);
-            StringBuilder sb = new StringBuilder();
-            sb.Append(sr.ReadToEnd());
-            byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
+            byte[] bytes = new byte[fs.Length];
+            fs.Read(bytes, 0, (int)fs.Length);
+            fs.Close();
+
+            dispatcher.InfoSend(bytes);
         }
     }
 }

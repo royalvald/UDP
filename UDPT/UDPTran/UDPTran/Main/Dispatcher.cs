@@ -107,7 +107,7 @@ namespace UDPTran
                 }
                 else
                 {
-                    ReceiveTempData = new ReceiveData(TempInfo, AbReceiveEndPoint);
+                    ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
                     PackProcess = new Thread(ProcessRequest);
                     PackProcess.Start(ReceiveTempData);
                 }
@@ -192,14 +192,11 @@ namespace UDPTran
             {
                 if (packetUtil.TotalCheckBool(dataPool.dic))
                 {
-                    byte[] TempleFile = packetUtil.PackIntoFile(dataPool.dic);
-                    //string s1 = Encoding.UTF8.GetString(TempleFile);
+                   
+                    
                     FileStream f1 = File.Create(@"F:test.txt");
 
-                    //Stream stream = f1;
-                    //StreamWriter sw = new StreamWriter(stream);
-                    //sw.Write(s1);
-                    //fs.Write(TempleFile, 0, TempleFile.Length);
+                    
                     int count = packetUtil.GetCount(dataPool.dic[0]);
                     int contextLength = packetUtil.GetContexLength(dataPool.dic[0]);
                     int i = 0;
@@ -209,10 +206,11 @@ namespace UDPTran
                         i++;
                     }
                     f1.Write(dataPool.dic[count-1],8,contextLength);
-                    //sw.Close();
-                    //stream.Close();
+                    
                     f1.Close();
                     Console.WriteLine("finshed");
+
+
                     //完成后删除相关接收缓冲池
                     ReceivePool.Remove(PackID);
                 }
