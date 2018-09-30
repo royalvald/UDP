@@ -35,7 +35,7 @@ namespace UDPTran
         public Dispatcher(string IP, int port)
         {
             //自身IP初始化
-            IPAddress selfAddress = IPAddress.Parse("192.168.152.32");
+            IPAddress selfAddress = IPAddress.Parse("192.168.109.35");
             hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
 
 
@@ -52,7 +52,7 @@ namespace UDPTran
             ServiceStart.Start();
 
             //丢包检查系统启动
-            Thread checkThread = new Thread(CheckProcess);
+            Thread checkThread = new Thread(CheckLostPack);
             checkThread.Start();
         }
 
@@ -467,7 +467,7 @@ namespace UDPTran
                 foreach (var Info in item.Value.dic)
                 {
                     socket.SendTo(Info.Value, Info.Value.Length, SocketFlags.None, item.Value.endPoint);
-                    Thread.Sleep(1);
+                    //Thread.Sleep(1);
                 }
             }
         }
