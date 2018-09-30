@@ -97,10 +97,11 @@ namespace UDPTran
             while (true)
             {
                 dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
-
+                byte[] infoByte = new byte[2048];
+                TempInfo.CopyTo(infoByte, 0);
                 if (dataSize == 2048)
                 {
-                    ReceiveTempData = new ReceiveData(TempInfo, AbReceiveEndPoint);
+                    ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
                     PackProcess = new Thread(PacketProcess);
                     PackProcess.Start(ReceiveTempData);
                 }
