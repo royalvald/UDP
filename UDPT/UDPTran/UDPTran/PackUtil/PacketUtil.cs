@@ -15,14 +15,14 @@ namespace UDPTran
         /// <summary>
         /// 头部信息长度大小
         /// </summary>
-        private int HeadLength = 8;
+        private int HeadLength = 12;
         /// <summary>
         /// 数据段信息长度
         /// </summary>
         private int ContextLength = 2040;
         private int HeadIDLength = 2;
-        private int HeadIndexLength = 2;
-        private int HeadPackCountLength = 2;
+        private int HeadIndexLength = 4;
+        private int HeadPackCountLength = 4;
         private int HeadContextLength = 2;
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace UDPTran
             Index = 0;//索引初始化
             while (position < Length)
             {
-                byte[] bytes = new byte[2048];
+                byte[] bytes = new byte[2050];
                 //先判断文件剩余长度
                 if (Length - position > 2040)
                 {
@@ -67,7 +67,7 @@ namespace UDPTran
                     Array.Copy(CreatHeader(ID, Index, Count, ContextLength), 0, bytes, 0, 8);
                     Array.Copy(FileInfo, position, bytes, HeadLength, ContextLength);
                     //剩余位置进行填充
-                    for(int i=ContextLength+HeadLength;i<2048;i++)
+                    for(int i=ContextLength+HeadLength;i<2052;i++)
                     {
                         bytes[i] = insert;
                     }
@@ -170,7 +170,7 @@ namespace UDPTran
 
             ContextLength = GetContexLength(dic[TotalCount - 1]);
             byte[] LastByte = new byte[ContextLength];
-            Array.Copy(dic[TotalCount - 1], 8, LastByte, 0, ContextLength);
+            Array.Copy(dic[TotalCount - 1], 12, LastByte, 0, ContextLength);
             list.AddRange(LastByte);
 
             return list.ToArray();
@@ -179,15 +179,15 @@ namespace UDPTran
         //制造头部信息
         private byte[] CreatHeader(int ID, int Index, int Count, int ContextLength)
         {
-            byte[] bytes = new byte[8];
+            byte[] bytes = new byte[12];
             //添加ID值
             Array.Copy(BitConverter.GetBytes((short)ID), 0, bytes, 0, 2);
             //添加包索引
-            Array.Copy(BitConverter.GetBytes((short)Index), 0, bytes, 2, 2);
+            Array.Copy(BitConverter.GetBytes(Index), 0, bytes, 2, 4);
             //添加包总数量
-            Array.Copy(BitConverter.GetBytes((short)Count), 0, bytes, 4, 2);
+            Array.Copy(BitConverter.GetBytes(Count), 0, bytes, 6, 4);
             //添加内容长度信息
-            Array.Copy(BitConverter.GetBytes((short)ContextLength), 0, bytes, 6, 2);
+            Array.Copy(BitConverter.GetBytes((short)ContextLength), 0, bytes, 10, 2);
 
             return bytes;
         }
@@ -206,12 +206,14 @@ namespace UDPTran
         //拼包时候获取数据中总包数，和上面的PackCount不一样，这个是从Dictionary中获取总包数
         public int GetCount(byte[] bytes)
         {
-            byte[] SumByte = new byte[2];
-            SumByte[0] = bytes[4];
-            SumByte[1] = bytes[5];
-            short TotalCount = BitConverter.ToInt16(SumByte, 0);
+            byte[] SumByte = new byte[4];
+            SumByte[0] = bytes[6];
+            SumByte[1] = bytes[7];
+            SumByte[2] = bytes[8];
+            SumByte[3] = bytes[9];
+            int TotalCount = BitConverter.ToInt32(SumByte, 0);
 
-            return (int)TotalCount;
+            return TotalCount;
         }
 
         //获取包ID
@@ -220,6 +222,7 @@ namespace UDPTran
             byte[] IDArray = new byte[2];
             IDArray[0] = bytes[0];
             IDArray[1] = bytes[1];
+            
             short IDNumber = BitConverter.ToInt16(IDArray, 0);
 
             return (int)IDNumber;
@@ -239,12 +242,16 @@ namespace UDPTran
         //获取包的内部索引
         public int GetIndex(byte[] bytes)
         {
-            byte[] length = new byte[2];
+            byte[] length = new byte[4];
             length[0] = bytes[2];
             length[1] = bytes[3];
-            short Index = BitConverter.ToInt16(length, 0);
+            length[2] = bytes[4];
+            length[3] = bytes[5];
+            int Index = BitConverter.ToInt32(length, 0);
 
-            return (int)Index;
+            return Index;
         }
+
+        
     }
 }

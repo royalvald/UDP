@@ -22,6 +22,7 @@ namespace UDPTran
             fs.Close();
 
             dispatcher.InfoSend(bytes);
+          
         }
     }
 }

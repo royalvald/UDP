@@ -19,8 +19,10 @@ namespace UDPTran
     {
         //ip地址
         private IPEndPoint hostIPEndPoint;
+       
         //通信socket
         private Socket socket;
+        private Socket socket1;
         //发送缓冲区
         private Dictionary<int, DataPool> sendOutPool;
         //接收缓冲区
@@ -82,6 +84,8 @@ namespace UDPTran
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.Bind(hostIPEndPoint);
 
+            socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket1.Bind(new IPEndPoint(hostIPEndPoint.Address,8080));
             //设置监听的端口号
             IPEndPoint ReceiveEndPoint = new IPEndPoint(IPAddress.Any, 0);
             EndPoint AbReceiveEndPoint = (EndPoint)ReceiveEndPoint;
@@ -232,12 +236,14 @@ namespace UDPTran
         //收到请求包的处理方式
         private void ProcessRequest(object objects)
         {
+            Console.WriteLine("pack lost processing");
             //获取数据
             byte[] bytes = ((ReceiveData)objects).bytes;
             EndPoint tempEndPoint = ((ReceiveData)objects).endPoint;
-
+            IPEndPoint tempIPEndPoint = (IPEndPoint)tempEndPoint;
+            IPEndPoint tran = new IPEndPoint(tempIPEndPoint.Address, 8090);
             //反序列化
-            Request request = (Request)(BytesToObject(bytes));
+            //Request request = (Request)(BytesToObject(bytes));
             /*if (request.requestType == RequestType.PreTag)
             {
                 //PreTag preTag = (PreTag)request;
@@ -249,7 +255,8 @@ namespace UDPTran
                 //ReSend reSend = (ReSend)request;
                 ProcessResend(objects);
             }*/
-            ProcessResend(objects);
+            //ProcessResend(objects);
+            processReByte(bytes, tran);
         }
 
         /// <summary>
@@ -273,6 +280,16 @@ namespace UDPTran
             //添加进缓冲池准备发送
             ResendTo(packID, Index, endPoint);
 
+        }
+
+
+        private void processReByte(byte[] bytes,EndPoint endPoint)
+        {
+            PacketUtil packetUtil = new PacketUtil();
+            int id = packetUtil.GetID(bytes);
+            int index = packetUtil.GetIndex(bytes);
+            byte[] infoBytes = sendOutPool[id].dic[index];
+            socket1.SendTo(infoBytes, endPoint);
         }
 
         /// <summary>
@@ -361,9 +378,10 @@ namespace UDPTran
             bytes = BitConverter.GetBytes(Index);
             Array.Copy(bytes, 0, InfoBytes, 2, 2);
 
-            DataPool dataPool;
+            //DataPool dataPool;
 
             //存入请求缓冲池
+            /*
             if (ResendPool.ContainsKey(packID))
             {
                 dataPool = ResendPool[packID];
@@ -373,17 +391,19 @@ namespace UDPTran
             {
                 dataPool = new DataPool(packID, new Dictionary<int, byte[]>(), endPoint);
                 dataPool.AddBytes(InfoBytes);
+
                 ResendPool.Add(packID, dataPool);
 
-            }
-
+            }*/
+            socket1.SendTo(InfoBytes, endPoint);
+            
 
         }
 
 
         private void DataPoolResend(DataPool dataPool)
         {
-
+            
         }
 
 
@@ -452,7 +472,6 @@ namespace UDPTran
         {
             IPEndPoint RemoteIPEndPoint = (IPEndPoint)endPoint;
             socket.SendTo(bytes, bytes.Length, SocketFlags.None, endPoint);
-
         }
 
         /// <summary>
@@ -497,6 +516,7 @@ namespace UDPTran
             foreach (var item in dic)
             {
                 ResendProcess(item.Value, item.Key, endPoint);
+                Thread.Sleep(1);
             }
         }
 
