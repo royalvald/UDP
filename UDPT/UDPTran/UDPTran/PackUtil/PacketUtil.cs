@@ -11,7 +11,7 @@ namespace UDPTran
         /// <summary>
         /// 包单个最大长度
         /// </summary>
-        private int PacketLength = 2048;
+        private int PacketLength = 2052;
         /// <summary>
         /// 头部信息长度大小
         /// </summary>
@@ -53,18 +53,18 @@ namespace UDPTran
             Index = 0;//索引初始化
             while (position < Length)
             {
-                byte[] bytes = new byte[2050];
+                byte[] bytes = new byte[2052];
                 //先判断文件剩余长度
                 if (Length - position > 2040)
                 {
                     ContextLength = 2040;
-                    Array.Copy(CreatHeader(ID, Index, Count, ContextLength), 0, bytes, 0, 8);
+                    Array.Copy(CreatHeader(ID, Index, Count, ContextLength), 0, bytes, 0, 12);
                     Array.Copy(FileInfo, position, bytes, HeadLength, ContextLength);
                 }
                 else
                 {
                     ContextLength = Length - position;
-                    Array.Copy(CreatHeader(ID, Index, Count, ContextLength), 0, bytes, 0, 8);
+                    Array.Copy(CreatHeader(ID, Index, Count, ContextLength), 0, bytes, 0, 12);
                     Array.Copy(FileInfo, position, bytes, HeadLength, ContextLength);
                     //剩余位置进行填充
                     for(int i=ContextLength+HeadLength;i<2052;i++)
@@ -81,6 +81,8 @@ namespace UDPTran
             }
             return list;
         }
+
+
         //检查数据包是否完整
         public bool TotalCheckBool(Dictionary<int, byte[]> dic)
         {
@@ -195,6 +197,7 @@ namespace UDPTran
         private int PackCount(byte[] bytes)
         {
             int length = bytes.Length;
+            if(length%con)
             return length / ContextLength + 1;
         }
         //生成包ID
@@ -232,8 +235,8 @@ namespace UDPTran
         public int GetContexLength(byte[] bytes)
         {
             byte[] Length = new byte[2];
-            Length[0] = bytes[6];
-            Length[1] = bytes[7];
+            Length[0] = bytes[10];
+            Length[1] = bytes[11];
             short TextLength = BitConverter.ToInt16(Length, 0);
 
             return (int)TextLength;

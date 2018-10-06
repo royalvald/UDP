@@ -37,7 +37,7 @@ namespace UDPTran
         public Dispatcher(string IP, int port)
         {
             //自身IP初始化
-            IPAddress selfAddress = IPAddress.Parse("192.168.109.35");
+            IPAddress selfAddress = IPAddress.Parse("172.29.129.94");
             hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
 
 
@@ -91,7 +91,7 @@ namespace UDPTran
             EndPoint AbReceiveEndPoint = (EndPoint)ReceiveEndPoint;
 
             //存储一些关于数据包的信息
-            byte[] TempInfo = new byte[2048];
+            byte[] TempInfo = new byte[2052];
 
             Thread PackProcess;
             int dataSize;
@@ -101,9 +101,9 @@ namespace UDPTran
             while (true)
             {
                 dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
-                byte[] infoByte = new byte[2048];
+                byte[] infoByte = new byte[2052];
                 TempInfo.CopyTo(infoByte, 0);
-                if (dataSize == 2048)
+                if (dataSize == 2052)
                 {
                     ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
                     PackProcess = new Thread(PacketProcess);
@@ -198,7 +198,7 @@ namespace UDPTran
                 {
                    
                     
-                    FileStream f1 = File.Create(@"F:test.txt");
+                    FileStream f1 = File.Create(@"F:test.pdf");
 
                     
                     int count = packetUtil.GetCount(dataPool.dic[0]);
@@ -206,10 +206,14 @@ namespace UDPTran
                     int i = 0;
                     while(i<count-1)
                     {
-                        f1.Write(dataPool.dic[i], 8, 2040);
+                        f1.Write(dataPool.dic[i], 12, 2040);
                         i++;
+                        if(i%100==0)
+                        {
+                            f1.Flush();
+                        }
                     }
-                    f1.Write(dataPool.dic[count-1],8,contextLength);
+                    f1.Write(dataPool.dic[count-1],12,contextLength);
                     
                     f1.Close();
                     Console.WriteLine("finshed");
@@ -344,7 +348,7 @@ namespace UDPTran
 
             dataPool.AddList(InfoList);
             sendOutPool.Add(ID, dataPool);
-
+            Console.WriteLine(dataPool.dic.Count);
             //发送数据
             Send(dataPool, (EndPoint)RemoteIPEndPoint);
         }
@@ -544,9 +548,10 @@ namespace UDPTran
                     ReceivePool.Remove(item.Key);
                 }
 
-                if (item.Value.leftTime < 27000)
+                if (item.Value.leftTime < 20000)
                 {
                     ProcessLostPacket(packetUtil.TotalCheck(item.Value.dic), item.Value.endPoint);
+                    Console.WriteLine("lost processing");
                 }
 
                 item.Value.leftTime -= 1000;
