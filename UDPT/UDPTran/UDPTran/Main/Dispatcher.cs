@@ -37,7 +37,7 @@ namespace UDPTran
         public Dispatcher(string IP, int port)
         {
             //自身IP初始化
-            IPAddress selfAddress = IPAddress.Parse("172.29.129.94");
+            IPAddress selfAddress = IPAddress.Parse("192.168.109.31");
             hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
 
 
@@ -100,21 +100,31 @@ namespace UDPTran
 
             while (true)
             {
-                dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
-                byte[] infoByte = new byte[2052];
-                TempInfo.CopyTo(infoByte, 0);
-                if (dataSize == 2052)
+                try
                 {
-                    ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
-                    PackProcess = new Thread(PacketProcess);
-                    PackProcess.Start(ReceiveTempData);
+                    dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
+                    byte[] infoByte = new byte[2052];
+                    TempInfo.CopyTo(infoByte, 0);
+                    if (dataSize == 2052)
+                    {
+                        ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
+                        PackProcess = new Thread(PacketProcess);
+                        PackProcess.Start(ReceiveTempData);
+                    }
+                    else
+                    {
+                        ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
+                        PackProcess = new Thread(ProcessRequest);
+                        PackProcess.Start(ReceiveTempData);
+                    }
+
                 }
-                else
+                catch (Exception)
                 {
-                    ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
-                    PackProcess = new Thread(ProcessRequest);
-                    PackProcess.Start(ReceiveTempData);
+
+                    
                 }
+                
             }
         }
         //测试服务，主要是测试数据基本传输
@@ -198,7 +208,7 @@ namespace UDPTran
                 {
                    
                     
-                    FileStream f1 = File.Create(@"F:test.pdf");
+                    FileStream f1 = File.Create(@"F:\test.pdf");
 
                     
                     int count = packetUtil.GetCount(dataPool.dic[0]);
@@ -367,20 +377,20 @@ namespace UDPTran
 
         {
             //重发请求只需要包含大包的ID和大包内的小包的索引
-            byte[] InfoBytes = new byte[4];
-            byte[] bytes = new byte[2];
+            byte[] InfoBytes = new byte[6];
+            byte[] bytes;
 
             //对写入的ID和Index进行特殊处理
             Int16 PID = (short)packID;
-            Int16 Index = (short)index;
+            
 
             //写入ID
             bytes = BitConverter.GetBytes(PID);
             Array.Copy(bytes, 0, InfoBytes, 0, 2);
 
             //写入Index
-            bytes = BitConverter.GetBytes(Index);
-            Array.Copy(bytes, 0, InfoBytes, 2, 2);
+            bytes = BitConverter.GetBytes(index);
+            Array.Copy(bytes, 0, InfoBytes, 2, 4);
 
             //DataPool dataPool;
 

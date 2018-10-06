@@ -13,10 +13,10 @@ namespace UDPTran
     {
         static void Main(string[] args)
         {
-            Dispatcher dispatcher = new Dispatcher("192.168.152.32", 8090);
+            Dispatcher dispatcher = new Dispatcher("192.168.109.41", 8090);
 
             
-            FileStream fs = new FileStream(@"F:\f1.pdf", FileMode.Open);
+            FileStream fs = new FileStream(@"H:\f1.rar", FileMode.Open);
             byte[] bytes = new byte[fs.Length];
             fs.Read(bytes, 0, (int)fs.Length);
             fs.Close();

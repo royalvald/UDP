@@ -197,8 +197,10 @@ namespace UDPTran
         private int PackCount(byte[] bytes)
         {
             int length = bytes.Length;
-            if(length%con)
-            return length / ContextLength + 1;
+            if (length % ContextLength == 0)
+                return length / ContextLength;
+            else
+                return length / ContextLength + 1;
         }
         //生成包ID
         private int CreatID()
