@@ -19,7 +19,7 @@ namespace UDPTran
     {
         //ip地址
         private IPEndPoint hostIPEndPoint;
-       
+
         //通信socket
         private Socket socket;
         private Socket socket1;
@@ -37,7 +37,7 @@ namespace UDPTran
         public Dispatcher(string IP, int port)
         {
             //自身IP初始化
-            IPAddress selfAddress = IPAddress.Parse("192.168.109.31");
+            IPAddress selfAddress = IPAddress.Parse("172.29.129.94");
             hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
 
 
@@ -85,7 +85,9 @@ namespace UDPTran
             socket.Bind(hostIPEndPoint);
 
             socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            socket1.Bind(new IPEndPoint(hostIPEndPoint.Address,8080));
+            //socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
+            //socket1.Ttl=100;
+
             //设置监听的端口号
             IPEndPoint ReceiveEndPoint = new IPEndPoint(IPAddress.Any, 0);
             EndPoint AbReceiveEndPoint = (EndPoint)ReceiveEndPoint;
@@ -100,31 +102,25 @@ namespace UDPTran
 
             while (true)
             {
-                try
-                {
-                    dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
-                    byte[] infoByte = new byte[2052];
-                    TempInfo.CopyTo(infoByte, 0);
-                    if (dataSize == 2052)
-                    {
-                        ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
-                        PackProcess = new Thread(PacketProcess);
-                        PackProcess.Start(ReceiveTempData);
-                    }
-                    else
-                    {
-                        ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
-                        PackProcess = new Thread(ProcessRequest);
-                        PackProcess.Start(ReceiveTempData);
-                    }
 
-                }
-                catch (Exception)
+                dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
+                byte[] infoByte = new byte[2052];
+                TempInfo.CopyTo(infoByte, 0);
+                if (dataSize == 2052)
                 {
-
-                    
+                    ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
+                    PackProcess = new Thread(PacketProcess);
+                    PackProcess.Start(ReceiveTempData);
                 }
-                
+                else
+                {
+                    ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
+                    PackProcess = new Thread(ProcessRequest);
+                    PackProcess.Start(ReceiveTempData);
+                }
+
+
+
             }
         }
         //测试服务，主要是测试数据基本传输
@@ -198,7 +194,7 @@ namespace UDPTran
             }
 
 
-
+            //Console.WriteLine(dataPool.Count);
 
             //检测是否可以进行拼包操作
 
@@ -206,25 +202,25 @@ namespace UDPTran
             {
                 if (packetUtil.TotalCheckBool(dataPool.dic))
                 {
-                   
-                    
+
+
                     FileStream f1 = File.Create(@"F:\test.pdf");
 
-                    
+
                     int count = packetUtil.GetCount(dataPool.dic[0]);
                     int contextLength = packetUtil.GetContexLength(dataPool.dic[0]);
                     int i = 0;
-                    while(i<count-1)
+                    while (i < count - 1)
                     {
                         f1.Write(dataPool.dic[i], 12, 2040);
                         i++;
-                        if(i%100==0)
+                        if (i % 100 == 0)
                         {
                             f1.Flush();
                         }
                     }
-                    f1.Write(dataPool.dic[count-1],12,contextLength);
-                    
+                    f1.Write(dataPool.dic[count - 1], 12, contextLength);
+
                     f1.Close();
                     Console.WriteLine("finshed");
 
@@ -250,7 +246,7 @@ namespace UDPTran
         //收到请求包的处理方式
         private void ProcessRequest(object objects)
         {
-            Console.WriteLine("pack lost processing");
+            //Console.WriteLine("pack lost processing");
             //获取数据
             byte[] bytes = ((ReceiveData)objects).bytes;
             EndPoint tempEndPoint = ((ReceiveData)objects).endPoint;
@@ -297,13 +293,21 @@ namespace UDPTran
         }
 
 
-        private void processReByte(byte[] bytes,EndPoint endPoint)
+        private void processReByte(byte[] bytes, EndPoint endPoint)
         {
             PacketUtil packetUtil = new PacketUtil();
             int id = packetUtil.GetID(bytes);
             int index = packetUtil.GetIndex(bytes);
             byte[] infoBytes = sendOutPool[id].dic[index];
-            socket1.SendTo(infoBytes, endPoint);
+
+
+            socket1.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, endPoint);
+            Thread.Sleep(1);
+            
+
+            Console.WriteLine("已发送请求");
+            Console.WriteLine(id);
+            Console.WriteLine(index);
         }
 
         /// <summary>
@@ -382,7 +386,7 @@ namespace UDPTran
 
             //对写入的ID和Index进行特殊处理
             Int16 PID = (short)packID;
-            
+
 
             //写入ID
             bytes = BitConverter.GetBytes(PID);
@@ -410,15 +414,12 @@ namespace UDPTran
 
             }*/
             socket1.SendTo(InfoBytes, endPoint);
-            
+
 
         }
 
 
-        private void DataPoolResend(DataPool dataPool)
-        {
-            
-        }
+
 
 
 
@@ -544,7 +545,8 @@ namespace UDPTran
             {
                 //一秒一次查询过程
                 Thread.Sleep(1000);
-                CheckProcess();
+                Thread thread = new Thread(CheckProcess);
+                thread.Start();
             }
         }
 
@@ -562,6 +564,12 @@ namespace UDPTran
                 {
                     ProcessLostPacket(packetUtil.TotalCheck(item.Value.dic), item.Value.endPoint);
                     Console.WriteLine("lost processing");
+                    foreach (var items in packetUtil.TotalCheck(item.Value.dic))
+                    {
+                        Console.WriteLine(items.Value);
+                        Console.WriteLine(items.Key);
+                    }
+
                 }
 
                 item.Value.leftTime -= 1000;
