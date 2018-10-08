@@ -22,7 +22,7 @@ namespace UDPTran
 
         //通信socket
         private Socket socket;
-        private Socket socket1;
+        //private Socket socket1;
         //发送缓冲区
         private Dictionary<int, DataPool> sendOutPool;
         //接收缓冲区
@@ -37,7 +37,7 @@ namespace UDPTran
         public Dispatcher(string IP, int port)
         {
             //自身IP初始化
-            IPAddress selfAddress = IPAddress.Parse("172.29.129.94");
+            IPAddress selfAddress = IPAddress.Parse("192.168.109.33");
             hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
 
 
@@ -84,7 +84,7 @@ namespace UDPTran
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.Bind(hostIPEndPoint);
 
-            socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            //socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             //socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
             //socket1.Ttl=100;
 
@@ -204,7 +204,7 @@ namespace UDPTran
                 {
 
 
-                    FileStream f1 = File.Create(@"F:\test.pdf");
+                    FileStream f1 = File.Create(@"H:\test.rar");
 
 
                     int count = packetUtil.GetCount(dataPool.dic[0]);
@@ -300,10 +300,12 @@ namespace UDPTran
             int index = packetUtil.GetIndex(bytes);
             byte[] infoBytes = sendOutPool[id].dic[index];
 
-
+            Socket socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            //socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
             socket1.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, endPoint);
+            socket1.Dispose();
             Thread.Sleep(1);
-            
+
 
             Console.WriteLine("已发送请求");
             Console.WriteLine(id);
@@ -377,7 +379,7 @@ namespace UDPTran
         /// <param name="packID"></param>
         /// <param name="index"></param>
         /// <param name="endPoint"></param>
-        private void ResendProcess(int packID, int index, EndPoint endPoint)
+        private void ResendProcess(int packID, int index, EndPoint endPoint, Socket socket1)
 
         {
             //重发请求只需要包含大包的ID和大包内的小包的索引
@@ -413,9 +415,9 @@ namespace UDPTran
                 ResendPool.Add(packID, dataPool);
 
             }*/
-            socket1.SendTo(InfoBytes, endPoint);
-
-
+            IPEndPoint iPEndPoint = (IPEndPoint)endPoint;
+            EndPoint tran = (EndPoint)(new IPEndPoint(iPEndPoint.Address, 8090));
+            socket1.SendTo(InfoBytes, tran);
         }
 
 
@@ -475,9 +477,11 @@ namespace UDPTran
         private void Send(DataPool dataPool, EndPoint endPoint)
         {
             IPEndPoint RemoteIPEndPoint = (IPEndPoint)endPoint;
+            Socket socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
             foreach (var item in dataPool.dic)
             {
-                socket.SendTo(item.Value, item.Value.Length, SocketFlags.None, endPoint);
+                socket1.SendTo(item.Value, item.Value.Length, SocketFlags.None, endPoint);
                 Thread.Sleep(1);
             }
 
@@ -528,11 +532,14 @@ namespace UDPTran
         /// <param name="endPoint"></param>
         public void ProcessLostPacket(Dictionary<int, int> dic, EndPoint endPoint)
         {
+            Socket socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
             foreach (var item in dic)
             {
-                ResendProcess(item.Value, item.Key, endPoint);
+                ResendProcess(item.Value, item.Key, endPoint, socket1);
                 Thread.Sleep(1);
             }
+            socket1.Dispose();
         }
 
 
@@ -545,8 +552,7 @@ namespace UDPTran
             {
                 //一秒一次查询过程
                 Thread.Sleep(1000);
-                Thread thread = new Thread(CheckProcess);
-                thread.Start();
+                CheckProcess();
             }
         }
 
@@ -564,11 +570,11 @@ namespace UDPTran
                 {
                     ProcessLostPacket(packetUtil.TotalCheck(item.Value.dic), item.Value.endPoint);
                     Console.WriteLine("lost processing");
-                    foreach (var items in packetUtil.TotalCheck(item.Value.dic))
+                    /*foreach (var items in packetUtil.TotalCheck(item.Value.dic))
                     {
                         Console.WriteLine(items.Value);
                         Console.WriteLine(items.Key);
-                    }
+                    }*/
 
                 }
 
