@@ -41,9 +41,7 @@ namespace UDPTran
         private PacketUtil packetUtil = new PacketUtil();
         public Dispatcher(string IP, int port)
         {
-            //自身IP初始化
-            IPAddress selfAddress = IPAddress.Parse("192.168.109.33");
-            hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
+            
 
 
             //初始化接受IP
@@ -63,6 +61,12 @@ namespace UDPTran
             checkThread.Start();
         }
 
+        public void setHostIPEndPoint(string IP,int port)
+        {
+            //自身IP初始化
+            IPAddress selfAddress = IPAddress.Parse(IP);
+            hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
+        }
 
 
         //服务开始
