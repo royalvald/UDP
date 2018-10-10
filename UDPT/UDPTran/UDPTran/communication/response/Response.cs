@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net;
+using System.Net.Sockets;
 
 namespace UDPTran
 {
@@ -17,7 +18,7 @@ namespace UDPTran
         private void ResponseTag(EndPoint myEndPoint, EndPoint endPoint, bool status)
         {
             PreTagResponse tagResponse;
-
+            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             if (status)
             {
                 tagResponse = new PreTagResponse(myEndPoint, ResponseStatus.OK);

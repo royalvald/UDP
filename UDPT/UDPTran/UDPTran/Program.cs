@@ -16,7 +16,7 @@ namespace UDPTran
             Dispatcher dispatcher = new Dispatcher("192.168.109.41", 8090);
 
             dispatcher.setHostIPEndPoint("192.168.109.33", 8090);
-            FileStream fs = new FileStream(@"H:\f1.pdf", FileMode.Open);
+            FileStream fs = new FileStream(@"H:\f1.rar", FileMode.Open);
             byte[] bytes = new byte[fs.Length];
             fs.Read(bytes, 0, (int)fs.Length);
             fs.Close();

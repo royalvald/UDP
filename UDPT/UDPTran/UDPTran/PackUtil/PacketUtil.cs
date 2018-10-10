@@ -266,7 +266,7 @@ namespace UDPTran
         /// </summary>
         /// <param name="bytes"></param>
         /// <returns></returns>
-        private object BytesToObject(byte[] bytes)
+        public object BytesToObject(byte[] bytes)
         {
             var memoryStream = new MemoryStream(bytes);
             var formalTer = new BinaryFormatter();
@@ -281,7 +281,7 @@ namespace UDPTran
         /// </summary>
         /// <param name="objects"></param>
         /// <returns></returns>
-        private byte[] ObjectToBytes(object objects)
+        public byte[] ObjectToBytes(object objects)
         {
             var memoryStream = new MemoryStream();
             var formalTer = new BinaryFormatter();
