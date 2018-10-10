@@ -10,7 +10,7 @@ namespace UDPTran
     class DataPool
     {
         //包ID
-        private int IDNumber;
+        private int iDNumber;
         //包数据
         public Dictionary<int, byte[]> dic;
         //目的地址
@@ -23,7 +23,7 @@ namespace UDPTran
 
         public DataPool(int ID,Dictionary<int,byte[]> dic,EndPoint endPoint)
         {
-            this.IDNumber = ID;
+            this.iDNumber = ID;
             this.dic = dic;
             this.endPoint = endPoint;
         }
@@ -37,7 +37,7 @@ namespace UDPTran
         /// <param name="leftTime">等待时间</param>
         public DataPool(int ID, Dictionary<int, byte[]> dic, EndPoint endPoint,int leftTime)
         {
-            this.IDNumber = ID;
+            this.iDNumber = ID;
             this.dic = dic;
             this.endPoint = endPoint;
             this.leftTime = leftTime;
@@ -48,6 +48,7 @@ namespace UDPTran
         //只允许读取当前计数总量不允许修改
         public int Count { get => count; }
         public int TotalCount { get => totalCount;  }
+        public int IDNumber { get => iDNumber;  }
 
 
 
@@ -86,7 +87,7 @@ namespace UDPTran
         {
             //将数据中ID和Endpoint信息写入
             PacketUtil packetUtil = new PacketUtil();
-            IDNumber = packetUtil.GetID(list[0]);
+           // iDNumber = packetUtil.GetID(list[0]);
             
             int index;
 

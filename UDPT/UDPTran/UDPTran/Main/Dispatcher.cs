@@ -9,6 +9,7 @@ using System.Threading;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UDPTran;
+using UDPTran.Save;
 
 namespace UDPTran
 {
@@ -28,12 +29,16 @@ namespace UDPTran
         //接收缓冲区
         private Dictionary<int, DataPool> ReceivePool;
         //重发请求缓冲区
-        private Dictionary<int, DataPool> ResendPool = new Dictionary<int, DataPool>();
+        private Dictionary<int, ResendPool> ResendBufferPool = new Dictionary<int, ResendPool>();
         //IP地址设定
         private IPEndPoint RemoteIPEndPoint;
         //private IPEndPoint RemotePoint;
         private Thread ServiceStart;
 
+        private DataPool dataPool;
+        private ResendPool pool;
+
+        private PacketUtil packetUtil = new PacketUtil();
         public Dispatcher(string IP, int port)
         {
             //自身IP初始化
@@ -58,24 +63,7 @@ namespace UDPTran
             checkThread.Start();
         }
 
-        //for test
-        public Dispatcher(string IP, int port, string words)
-        {
-            IPAddress selfAddress = IPAddress.Parse("192.168.152.32");
-            hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
 
-
-            //初始化接受IP
-            IPAddress iPAddress = IPAddress.Parse(IP);
-            RemoteIPEndPoint = new IPEndPoint(iPAddress, port);
-            //接收池与发送池初始化
-            sendOutPool = new Dictionary<int, DataPool>();
-            ReceivePool = new Dictionary<int, DataPool>();
-
-            ServiceStart = new Thread(ServiceTest);
-
-            ServiceStart.Start();
-        }
 
         //服务开始
         private void Service(object objects)
@@ -123,30 +111,7 @@ namespace UDPTran
 
             }
         }
-        //测试服务，主要是测试数据基本传输
-        private void ServiceTest()
-        {
-            socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            socket.Bind(hostIPEndPoint);
 
-            //设置监听的端口号
-            IPEndPoint ReceiveEndPoint = new IPEndPoint(IPAddress.Any, 0);
-            EndPoint AbReceiveEndPoint = (EndPoint)ReceiveEndPoint;
-
-            byte[] TempInfo = new byte[2048];
-            Thread PackProcess;
-            int dataSize;
-            object ReceiveTempData;
-
-
-            while (true)
-            {
-                dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
-
-                Console.WriteLine(Encoding.UTF8.GetString(TempInfo) + AbReceiveEndPoint.ToString());
-            }
-
-        }
         //收到的网络数据包分为两种，一种是包含文件信息数据，另外一种就是包含请求的，所以应该分开处理
         /// <summary>
         /// 受到数据包处理方式
@@ -158,7 +123,7 @@ namespace UDPTran
 
             int PackID;
             Dictionary<int, int> PackCheck;
-            DataPool dataPool;
+            DataPool dataPool = null;
 
 
             //获取包装类中的数据
@@ -167,14 +132,23 @@ namespace UDPTran
 
 
             //调用工具类处理数据包数据
-            PacketUtil packetUtil = new PacketUtil();
+            // PacketUtil packetUtil = new PacketUtil();
             //获取数据包的ID,用作分类,获取数据池
             PackID = packetUtil.GetID(bytes);
+            int index = packetUtil.GetIndex(bytes);
+
+
 
 
             //先判断总数据池中有没有相关ID的数据池
             lock (this)
             {
+
+                if (ResendBufferPool.ContainsKey(PackID))
+                {
+                    pool = ResendBufferPool[PackID];
+                    pool.dic.Remove(index);
+                }
                 if (ReceivePool.ContainsKey(PackID))
                 {
                     dataPool = ReceivePool[PackID];
@@ -252,20 +226,7 @@ namespace UDPTran
             EndPoint tempEndPoint = ((ReceiveData)objects).endPoint;
             IPEndPoint tempIPEndPoint = (IPEndPoint)tempEndPoint;
             IPEndPoint tran = new IPEndPoint(tempIPEndPoint.Address, 8090);
-            //反序列化
-            //Request request = (Request)(BytesToObject(bytes));
-            /*if (request.requestType == RequestType.PreTag)
-            {
-                //PreTag preTag = (PreTag)request;
-                ProcessPreTag(objects);
 
-            }
-            else if (request.requestType == RequestType.ReSend)
-            {
-                //ReSend reSend = (ReSend)request;
-                ProcessResend(objects);
-            }*/
-            //ProcessResend(objects);
             processReByte(bytes, tran);
         }
 
@@ -307,9 +268,9 @@ namespace UDPTran
             Thread.Sleep(1);
 
 
-            Console.WriteLine("已发送请求");
+            /*Console.WriteLine("已发送请求");
             Console.WriteLine(id);
-            Console.WriteLine(index);
+            Console.WriteLine(index);*/
         }
 
         /// <summary>
@@ -333,7 +294,7 @@ namespace UDPTran
         }
 
 
-        private void ProcessPreTag(object objects)
+        /*private void ProcessPreTag(object objects)
         {
             byte[] bytes = ((ReceiveData)objects).bytes;
             EndPoint endPoint = ((ReceiveData)objects).endPoint;
@@ -345,7 +306,7 @@ namespace UDPTran
             ReceivePool.Add(preTag.ID, new DataPool(preTag.ID, new Dictionary<int, byte[]>(), preTag.MyEndPoint));
             ResponseTag(endPoint, true);
         }
-
+        */
 
 
         //发送二进制数据
@@ -425,52 +386,9 @@ namespace UDPTran
 
 
 
-        /// <summary>
-        /// 发送头部信息
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="endPoint"></param>
-        private void SendTag(byte[] bytes, EndPoint endPoint)
-        {
-            int ID;
-            PacketUtil packetUtil = new PacketUtil();
-            ID = packetUtil.GetID(bytes);
-            PreTag preTag = new PreTag(RemoteIPEndPoint, endPoint, ID, RequestType.PreTag);
-            byte[] TempBytes = ObjectToBytes((object)preTag);
-            socket.SendTo(TempBytes, TempBytes.Length, SocketFlags.None, endPoint);
-        }
 
-        /// <summary>
-        /// 类转化为字节组数
-        /// </summary>
-        /// <param name="objects"></param>
-        /// <returns></returns>
-        private byte[] ObjectToBytes(object objects)
-        {
-            var memoryStream = new MemoryStream();
-            var formalTer = new BinaryFormatter();
-            formalTer.Serialize(memoryStream, formalTer);
-            byte[] bytes = memoryStream.ToArray();
-            memoryStream.Close();
 
-            return bytes;
 
-        }
-
-        /// <summary>
-        /// 字节数组转化为类
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
-        private object BytesToObject(byte[] bytes)
-        {
-            var memoryStream = new MemoryStream(bytes);
-            var formalTer = new BinaryFormatter();
-            var objects = formalTer.Deserialize(memoryStream);
-            memoryStream.Close();
-
-            return objects;
-        }
 
 
         //发送单个信息的方法
@@ -566,8 +484,9 @@ namespace UDPTran
                     ReceivePool.Remove(item.Key);
                 }
 
-                if (item.Value.leftTime < 20000)
+                if (item.Value.leftTime < 27000)
                 {
+
                     ProcessLostPacket(packetUtil.TotalCheck(item.Value.dic), item.Value.endPoint);
                     Console.WriteLine("lost processing");
                     /*foreach (var items in packetUtil.TotalCheck(item.Value.dic))
@@ -582,26 +501,24 @@ namespace UDPTran
             }
 
             //发送整个重发缓冲池的数据
-            SendInfo(ResendPool);
+            //SendInfo(ResendPool);
         }
 
-
-        private void ResponseTag(EndPoint endPoint, bool status)
+        private void ResendProcess(DataPool dataPool)
         {
-            PreTagResponse tagResponse;
-
-            if (status)
+            int id = dataPool.IDNumber;
+            ResendPool pool;
+            if (ResendBufferPool.ContainsKey(id))
             {
-                tagResponse = new PreTagResponse(hostIPEndPoint, ResponseStatus.OK);
-
+                pool = ResendBufferPool[id];
+                ProcessLostPacket(pool.dic, pool.RemotePoint);
             }
             else
             {
-                tagResponse = new PreTagResponse(hostIPEndPoint, ResponseStatus.Failed);
+                pool = new ResendPool(this.hostIPEndPoint, dataPool.endPoint, packetUtil.TotalCheck(dataPool.dic), dataPool.IDNumber);
+                ResendBufferPool.Add(dataPool.IDNumber, pool);
+                ProcessLostPacket(pool.dic, pool.RemotePoint);
             }
-
-            byte[] bytes = ObjectToBytes((object)tagResponse);
-            socket.SendTo(bytes, bytes.Length, SocketFlags.None, endPoint);
         }
 
     }

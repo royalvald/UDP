@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -257,6 +259,37 @@ namespace UDPTran
             return Index;
         }
 
-        
+
+
+        /// <summary>
+        /// 字节数组转化为类
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        private object BytesToObject(byte[] bytes)
+        {
+            var memoryStream = new MemoryStream(bytes);
+            var formalTer = new BinaryFormatter();
+            var objects = formalTer.Deserialize(memoryStream);
+            memoryStream.Close();
+
+            return objects;
+        }
+
+        /// <summary>
+        /// 类转化为字节数组
+        /// </summary>
+        /// <param name="objects"></param>
+        /// <returns></returns>
+        private byte[] ObjectToBytes(object objects)
+        {
+            var memoryStream = new MemoryStream();
+            var formalTer = new BinaryFormatter();
+            formalTer.Serialize(memoryStream, objects);
+            byte[] bytes = memoryStream.ToArray();
+            memoryStream.Close();
+
+            return bytes;
+        }
     }
 }
