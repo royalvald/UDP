@@ -502,7 +502,9 @@ namespace UDPTran
 					ReceivePool.Remove(item.Key);
 				}
 
-				if (item.Value.leftTime < 27000)
+				if (ResendBufferPool.ContainsKey(item.Key))
+                    ResendProcess(item.Value);
+				else if (item.Value.leftTime < 27000)
 				{
 
 					ResendProcess(item.Value);
@@ -512,8 +514,9 @@ namespace UDPTran
                         Console.WriteLine(items.Value);
                         Console.WriteLine(items.Key);
                     }*/
-
 				}
+
+
 
 				item.Value.leftTime -= 1000;
 			}
@@ -532,6 +535,7 @@ namespace UDPTran
 					lock (locker)
 					{
 						list = processBuffer[item].ToList();
+						processBuffer.Remove(item);
 					}
 
 					foreach (var items in list)
