@@ -63,6 +63,9 @@ namespace UDPTran
             //丢包检查系统启动
             Thread checkThread = new Thread(CheckLostPack);
             checkThread.Start();
+
+			Thread thread1 = new Thread(MsgService);
+			thread1.Start();
         }
 
         public void setHostIPEndPoint(string IP, int port)
@@ -134,7 +137,7 @@ namespace UDPTran
                 if (dataSize > 0)
                 {
                     byte[] temp = new byte[1024];
-                    Array.Copy(bufferArray, temp, 0);
+					bufferArray.CopyTo(temp,0);
                     receiveData = new ReceiveData(temp, endPoint);
                     Thread thread = new Thread(processMsg);
                     thread.Start(receiveData);
@@ -334,12 +337,14 @@ namespace UDPTran
             byte[] bytes = ((ReceiveData)objects).bytes;
             IPEndPoint endPoint = (IPEndPoint)(((ReceiveData)objects).endPoint);
             MsgBuffer.Add(endPoint.Address.ToString(), Encoding.UTF8.GetString(bytes));
-            //Console.WriteLine(Encoding.UTF8.GetString(bytes));
+			string s1 = Encoding.UTF8.GetString(bytes);
+            Console.WriteLine(s1);
+			Console.WriteLine("1111111111111111");
             /*数据处理*/
 
             Socket socketTemp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             byte[] infoBytes = Encoding.UTF8.GetBytes("roger");
-            socketTemp.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, endPoint);
+			socketTemp.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, new IPEndPoint(endPoint.Address,8060));
             socketTemp.Dispose();
         }
 
