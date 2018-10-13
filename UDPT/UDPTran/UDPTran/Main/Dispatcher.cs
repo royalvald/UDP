@@ -52,6 +52,9 @@ namespace UDPTran
             IPAddress iPAddress = IPAddress.Parse(IP);
             RemoteIPEndPoint = new IPEndPoint(iPAddress, port);
 
+            IPAddress selfAddress = IPAddress.Parse("192.168.109.33");
+            hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
+
             //接收池与发送池初始化
             sendOutPool = new Dictionary<int, DataPool>();
             ReceivePool = new Dictionary<int, DataPool>();
@@ -312,7 +315,7 @@ namespace UDPTran
             Socket temp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             byte[] tempBytes = Encoding.UTF8.GetBytes("I will send file");
 
-            temp.SendTo(tempBytes, tempBytes.Length, SocketFlags.None, RemoteIPEndPoint);
+            temp.SendTo(tempBytes, tempBytes.Length, SocketFlags.None, new IPEndPoint(RemoteIPEndPoint.Address,8060));
 
             bool check = true;
             while(check)
@@ -336,16 +339,26 @@ namespace UDPTran
         {
             byte[] bytes = ((ReceiveData)objects).bytes;
             IPEndPoint endPoint = (IPEndPoint)(((ReceiveData)objects).endPoint);
-            MsgBuffer.Add(endPoint.Address.ToString(), Encoding.UTF8.GetString(bytes));
-			string s1 = Encoding.UTF8.GetString(bytes);
-            Console.WriteLine(s1);
-			Console.WriteLine("1111111111111111");
-            /*数据处理*/
+            if (!MsgBuffer.ContainsKey(endPoint.Address.ToString()))
+            {
+                MsgBuffer.Add(endPoint.Address.ToString(), Encoding.UTF8.GetString(bytes));
+                string s1 = Encoding.UTF8.GetString(bytes);
+                Console.WriteLine(s1);
+                Console.WriteLine("1111111111111111");
+                /*数据处理*/
 
-            Socket socketTemp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            byte[] infoBytes = Encoding.UTF8.GetBytes("roger");
-			socketTemp.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, new IPEndPoint(endPoint.Address,8060));
-            socketTemp.Dispose();
+                Socket socketTemp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                byte[] infoBytes = Encoding.UTF8.GetBytes("roger");
+                socketTemp.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, new IPEndPoint(endPoint.Address, 8060));
+                socketTemp.Dispose();
+            }
+            else
+            {
+                Socket socketTemp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                byte[] infoBytes = Encoding.UTF8.GetBytes("roger");
+                socketTemp.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, new IPEndPoint(endPoint.Address, 8060));
+                socketTemp.Dispose();
+            }
         }
 
         private bool checkMsg(byte[] bytes)
