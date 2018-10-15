@@ -227,14 +227,14 @@ namespace UDPTran
                     int i = 0;
                     while (i < count - 1)
                     {
-                        f1.Write(dataPool.dic[i], 12, 2040);
+                        f1.Write(dataPool.dic[i], packetUtil.HeadLength, packetUtil.MaxContextLength);
                         i++;
                         if (i % 100 == 0)
                         {
                             f1.Flush();
                         }
                     }
-                    f1.Write(dataPool.dic[count - 1], 12, contextLength);
+                    f1.Write(dataPool.dic[count - 1], packetUtil.HeadLength, contextLength);
 
                     f1.Close();
                     Console.WriteLine("finshed");

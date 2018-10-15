@@ -13,19 +13,27 @@ namespace UDPTran
         /// <summary>
         /// 包单个最大长度
         /// </summary>
-        private int PacketLength = 1024016;
+        private int packetLength = 2056;
         /// <summary>
         /// 头部信息长度大小
         /// </summary>
-        private int HeadLength = 16;
+        private int headLength = 16;
         /// <summary>
         /// 数据段信息长度
         /// </summary>
-        private int MaxContextLength = 1024000;
-        private int HeadIDLength = 4;
-        private int HeadIndexLength = 4;
-        private int HeadPackCountLength = 4;
-        private int HeadContextLength = 4;
+        private int maxContextLength = 2040;
+        private int headIDLength = 4;
+        private int headIndexLength = 4;
+        private int headPackCountLength = 4;
+        private int headContextLength = 4;
+
+        public int PacketLength { get => packetLength; }
+        public int HeadLength { get => headLength; }
+        public int MaxContextLength { get => maxContextLength; }
+        public int HeadIDLength { get => headIDLength; }
+        public int HeadIndexLength { get => headIndexLength; }
+        public int HeadPackCountLength { get => headPackCountLength; }
+        public int HeadContextLength { get => headContextLength; }
 
         /// <summary>
         /// 信息分片
@@ -39,13 +47,13 @@ namespace UDPTran
             //分包后放入list
             List<byte[]> list = new List<byte[]>();
             //分包暂存
-            
+
             //标志当前位置
             int position = 0;
             //当前文件生成的ID
             int ID = CreatID();
             //分包中指示当前的索引
-            int Index ;
+            int Index;
             //指示当前分包的总数
             int Count = PackCount(FileInfo);
             //标志当前包中信息长度
@@ -69,7 +77,7 @@ namespace UDPTran
                     Array.Copy(CreatHeader(ID, Index, Count, ContextLength), 0, bytes, 0, 16);
                     Array.Copy(FileInfo, position, bytes, HeadLength, ContextLength);
                     //剩余位置进行填充
-                    for(int i=ContextLength+HeadLength;i<MaxContextLength;i++)
+                    for (int i = ContextLength + HeadLength; i < MaxContextLength; i++)
                     {
                         bytes[i] = insert;
                     }
@@ -79,7 +87,7 @@ namespace UDPTran
                 position += ContextLength;
 
                 list.Add(bytes);
-                
+
             }
             return list;
         }
@@ -124,17 +132,17 @@ namespace UDPTran
         /// </summary>
         /// <param name="dic"></param>
         /// <returns></returns>
-        public Dictionary<int,int> TotalCheck(Dictionary<int,byte[]> dic)
+        public Dictionary<int, int> TotalCheck(Dictionary<int, byte[]> dic)
         {
-            
+
             Dictionary<int, int> LostPairs = new Dictionary<int, int>();
-            int TotalPack=0;
+            int TotalPack = 0;
             int PackID = 0;
-            byte[] bytes ;
+            byte[] bytes;
             //为了防止出现丢包情况，所以将字典中所有数据进行遍历，如果找到其中一个不为空那么就读取其数据值，
-            for(int i=0;i<100;i++)
+            for (int i = 0; i < 100; i++)
             {
-                if(dic.ContainsKey(i))
+                if (dic.ContainsKey(i))
                 {
                     bytes = dic[i];
                     //获取文件总包数
@@ -143,13 +151,13 @@ namespace UDPTran
                     break;
                 }
 
-                
-            }           
+
+            }
             //查询所有键值对的key，如果发现缺少则添加进dictionary返回
 
-            for(int i=0;i<TotalPack;i++)
+            for (int i = 0; i < TotalPack; i++)
             {
-                if(!dic.ContainsKey(i))
+                if (!dic.ContainsKey(i))
                 {
                     LostPairs.Add(i, PackID);
                 }
@@ -158,16 +166,16 @@ namespace UDPTran
         }
 
         //运行此方法前要先调用检查方法，确定包的完整性
-        public byte[] PackIntoFile(Dictionary<int,byte[]> dic)
+        public byte[] PackIntoFile(Dictionary<int, byte[]> dic)
         {
             List<byte> list = new List<byte>();
-            byte[] TempFile = new byte[MaxContextLength-16];
+            byte[] TempFile = new byte[MaxContextLength - 16];
             byte[] bytes = dic[0];
             int ContextLength;
             int TotalCount = GetCount(bytes);
-            for(int i=0;i<TotalCount-1;i++)
+            for (int i = 0; i < TotalCount - 1; i++)
             {
-                Array.Copy(dic[i], 16, TempFile, 0, MaxContextLength-16);
+                Array.Copy(dic[i], 16, TempFile, 0, MaxContextLength - 16);
                 list.AddRange(TempFile);
             }
             //以上仅仅处理了总包数-1数量的数据包，剩下的一个数据包因为自身数据特殊(即数据包可能存在填充数据)，所以应该分开处理
@@ -189,7 +197,7 @@ namespace UDPTran
             //添加包索引
             Array.Copy(BitConverter.GetBytes(Index), 0, bytes, 4, 4);
             //添加包总数量
-            Array.Copy(BitConverter.GetBytes(Count), 0, bytes,8, 4);
+            Array.Copy(BitConverter.GetBytes(Count), 0, bytes, 8, 4);
             //添加内容长度信息
             Array.Copy(BitConverter.GetBytes(ContextLength), 0, bytes, 12, 4);
 
@@ -232,7 +240,7 @@ namespace UDPTran
             IDArray[1] = bytes[1];
             IDArray[2] = bytes[2];
             IDArray[3] = bytes[3];
-            int  IDNumber = BitConverter.ToInt32(IDArray, 0);
+            int IDNumber = BitConverter.ToInt32(IDArray, 0);
 
             return IDNumber;
         }
