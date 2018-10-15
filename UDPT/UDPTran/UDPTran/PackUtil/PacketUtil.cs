@@ -63,7 +63,7 @@ namespace UDPTran
             Index = 0;//索引初始化
             while (position < Length)
             {
-                byte[] bytes = new byte[MaxContextLength];
+                byte[] bytes = new byte[packetLength];
                 //先判断文件剩余长度
                 if (Length - position > MaxContextLength)
                 {

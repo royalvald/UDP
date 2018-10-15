@@ -93,7 +93,7 @@ namespace UDPTran
             EndPoint AbReceiveEndPoint = (EndPoint)ReceiveEndPoint;
 
             //存储一些关于数据包的信息
-            byte[] TempInfo = new byte[2052];
+            byte[] TempInfo = new byte[packetUtil.PacketLength];
 
             Thread PackProcess;
             int dataSize;
@@ -104,9 +104,9 @@ namespace UDPTran
             {
 
                 dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
-                byte[] infoByte = new byte[2052];
+                byte[] infoByte = new byte[packetUtil.PacketLength];
                 TempInfo.CopyTo(infoByte, 0);
-                if (dataSize == 2052)
+                if (dataSize == packetUtil.PacketLength)
                 {
                     ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
                     PackProcess = new Thread(PacketProcess);
@@ -281,7 +281,7 @@ namespace UDPTran
             //socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
             socket1.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, endPoint);
             socket1.Dispose();
-            Thread.Sleep(1);
+            //Thread.Sleep(1);
 
 
             /*Console.WriteLine("已发送请求");
@@ -386,20 +386,20 @@ namespace UDPTran
 
         {
             //重发请求只需要包含大包的ID和大包内的小包的索引
-            byte[] InfoBytes = new byte[6];
+            byte[] InfoBytes = new byte[8];
             byte[] bytes;
 
             //对写入的ID和Index进行特殊处理
-            Int16 PID = (short)packID;
+            int PID = packID;
 
 
             //写入ID
             bytes = BitConverter.GetBytes(PID);
-            Array.Copy(bytes, 0, InfoBytes, 0, 2);
+            Array.Copy(bytes, 0, InfoBytes, 0, 4);
 
             //写入Index
             bytes = BitConverter.GetBytes(index);
-            Array.Copy(bytes, 0, InfoBytes, 2, 4);
+            Array.Copy(bytes, 0, InfoBytes, 4, 4);
 
 
             IPEndPoint iPEndPoint = (IPEndPoint)endPoint;
@@ -420,7 +420,7 @@ namespace UDPTran
             {
                 socket1.SendTo(item.Value, item.Value.Length, SocketFlags.None, endPoint);
                 //Thread.Sleep(1);
-                if (i % 5 == 0)
+                if (i % 2 == 0)
                     Thread.Sleep(1);
                 i++;
             }
@@ -478,7 +478,7 @@ namespace UDPTran
             foreach (var item in dic)
             {
                 ResendProcess(item.Value, item.Key, endPoint, socket1);
-                if (i % 5 == 0)
+                if (i % 2 == 0)
                     Thread.Sleep(1);
                 i++;
                 //Thread.Sleep(1);
@@ -544,7 +544,7 @@ namespace UDPTran
                     lock (locker)
                     {
                         list = processBuffer[item].ToList();
-                        processBuffer.Remove(item);
+                        processBuffer.Remove(item); 
                     }
 
                     foreach (var items in list)
