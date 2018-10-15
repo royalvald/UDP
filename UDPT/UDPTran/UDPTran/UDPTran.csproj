@@ -55,6 +55,7 @@
     <Compile Include="communication\response\Response.cs" />
     <Compile Include="communication\response\PreTagResponse.cs" />
     <Compile Include="communication\base\TranTag.cs" />
+    <Compile Include="Save\Remove.cs" />
     <Compile Include="Save\ResendPool.cs" />
   </ItemGroup>
   <ItemGroup>

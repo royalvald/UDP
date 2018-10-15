@@ -22,6 +22,8 @@ namespace UDPTran
         private IPEndPoint hostIPEndPoint = null;
 
         private static object locker = new object();
+
+        private static object lockerResend = new object();
         //通信socket
         private Socket socket;
         private Socket socketMsg;
@@ -32,7 +34,7 @@ namespace UDPTran
         private Dictionary<int, DataPool> ReceivePool;
         //重发请求缓冲区
         private Dictionary<int, ResendPool> ResendBufferPool = new Dictionary<int, ResendPool>();
-        private Dictionary<int, List<int>> processBuffer = new Dictionary<int, List<int>>();
+        
         //IP地址设定
         private IPEndPoint RemoteIPEndPoint;
         //private IPEndPoint RemotePoint;
@@ -67,8 +69,8 @@ namespace UDPTran
             Thread checkThread = new Thread(CheckLostPack);
             checkThread.Start();
 
-			//Thread thread1 = new Thread(MsgService);
-			//thread1.Start();
+            //Thread thread1 = new Thread(MsgService);
+            //thread1.Start();
         }
 
         public void setHostIPEndPoint(string IP, int port)
@@ -140,7 +142,7 @@ namespace UDPTran
                 if (dataSize > 0)
                 {
                     byte[] temp = new byte[1024];
-					bufferArray.CopyTo(temp,0);
+                    bufferArray.CopyTo(temp, 0);
                     receiveData = new ReceiveData(temp, endPoint);
                     Thread thread = new Thread(processMsg);
                     thread.Start(receiveData);
@@ -182,13 +184,7 @@ namespace UDPTran
 
                 if (ResendBufferPool.ContainsKey(PackID))
                 {
-                    if (processBuffer.ContainsKey(PackID))
-                        processBuffer[PackID].Add(index);
-                    else
-                    {
-                        processBuffer.Add(PackID, new List<int>());
-                        processBuffer[PackID].Add(index);
-                    }
+                    RemoveResendPool(PackID, index);
                 }
                 if (ReceivePool.ContainsKey(PackID))
                 {
@@ -223,7 +219,7 @@ namespace UDPTran
 
 
                     int count = packetUtil.GetCount(dataPool.dic[0]);
-                    int contextLength = packetUtil.GetContexLength(dataPool.dic[0]);
+                    int contextLength = packetUtil.GetContexLength(dataPool.dic[count-1]);
                     int i = 0;
                     while (i < count - 1)
                     {
@@ -245,6 +241,7 @@ namespace UDPTran
                 }
                 else
                 {
+                    Console.WriteLine("数据发现冗余");
                     PackCheck = packetUtil.TotalCheck(dataPool.dic);
                     ProcessLostPacket(PackCheck, dataPool.endPoint);
                 }
@@ -280,7 +277,7 @@ namespace UDPTran
             Socket socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             //socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
             socket1.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, endPoint);
-            socket1.Dispose();
+            //socket1.Dispose();
             //Thread.Sleep(1);
 
 
@@ -315,7 +312,7 @@ namespace UDPTran
             Socket temp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             byte[] tempBytes = Encoding.UTF8.GetBytes("I will send file");
 
-            temp.SendTo(tempBytes, tempBytes.Length, SocketFlags.None, new IPEndPoint(RemoteIPEndPoint.Address,8060));
+            temp.SendTo(tempBytes, tempBytes.Length, SocketFlags.None, new IPEndPoint(RemoteIPEndPoint.Address, 8060));
 
             bool check = true;
             /*while(check)
@@ -495,8 +492,7 @@ namespace UDPTran
             while (true)
             {
                 //一秒一次查询过程
-                Thread.Sleep(1000);
-                PreCheck();
+                Thread.Sleep(1000);               
                 CheckProcess();
             }
         }
@@ -511,9 +507,8 @@ namespace UDPTran
                     ReceivePool.Remove(item.Key);
                 }
 
-                if (ResendBufferPool.ContainsKey(item.Key))
-                    ResendProcess(item.Value);
-                else if (item.Value.leftTime < 27000)
+               
+                if (item.Value.leftTime < 27000)
                 {
 
                     ResendProcess(item.Value);
@@ -534,26 +529,7 @@ namespace UDPTran
             //SendInfo(ResendPool);
         }
 
-        private void PreCheck()
-        {
-            foreach (var item in ResendBufferPool.Keys)
-            {
-                List<int> list = new List<int>();
-                if (processBuffer.ContainsKey(item))
-                {
-                    lock (locker)
-                    {
-                        list = processBuffer[item].ToList();
-                        processBuffer.Remove(item); 
-                    }
-
-                    foreach (var items in list)
-                    {
-                        ResendBufferPool[item].dic.Remove(items);
-                    }
-                }
-            }
-        }
+       
 
         private void ResendProcess(DataPool dataPool)
         {
@@ -572,6 +548,15 @@ namespace UDPTran
             }
         }
 
+
+        private void RemoveResendPool(int packID, int index)
+        {
+
+            ResendBufferPool[packID].dic.Remove(index);
+
+            if (ResendBufferPool[packID].dic.Count == 0)
+                ResendBufferPool.Remove(packID);
+        }
     }
 }
 
