@@ -67,8 +67,8 @@ namespace UDPTran
             Thread checkThread = new Thread(CheckLostPack);
             checkThread.Start();
 
-			Thread thread1 = new Thread(MsgService);
-			thread1.Start();
+			//Thread thread1 = new Thread(MsgService);
+			//thread1.Start();
         }
 
         public void setHostIPEndPoint(string IP, int port)
@@ -219,7 +219,7 @@ namespace UDPTran
                 {
 
 
-                    FileStream f1 = File.Create(@"/home/charmer/test.rar");
+                    FileStream f1 = File.Create(@"H:\test.pdf");
 
 
                     int count = packetUtil.GetCount(dataPool.dic[0]);
@@ -318,19 +318,26 @@ namespace UDPTran
             temp.SendTo(tempBytes, tempBytes.Length, SocketFlags.None, new IPEndPoint(RemoteIPEndPoint.Address,8060));
 
             bool check = true;
-            while(check)
+            /*while(check)
             {
                 if (MsgBuffer.ContainsKey(RemoteIPEndPoint.Address.ToString()))
+                {
                     if (MsgBuffer[RemoteIPEndPoint.Address.ToString()].IndexOf("roger") >= 0)
                     {
                         check = false;
                         MsgBuffer.Remove(RemoteIPEndPoint.Address.ToString());
                     }
+                }
+                else
+                {
+                    Thread.Sleep(1000);
+                }
             }
 
             Console.WriteLine("response received, starting transmission");
+            */
             //发送数据
-            //Send(dataPool, (EndPoint)RemoteIPEndPoint);
+            Send(dataPool, (EndPoint)RemoteIPEndPoint);
         }
 
 
