@@ -511,11 +511,7 @@ namespace UDPTran
                     ReceivePool.Remove(item.Key);
                 }
 
-                if (ResendBufferPool.ContainsKey(item.Key))
-                {
-                    ResendProcess(item.Value);
-                    Console.WriteLine("lost processing");
-                }
+                
                 if (item.Value.leftTime < 27000)
                 {
 
