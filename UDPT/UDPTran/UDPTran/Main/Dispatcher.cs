@@ -34,7 +34,7 @@ namespace UDPTran
         private Dictionary<int, DataPool> ReceivePool;
         //重发请求缓冲区
         private Dictionary<int, ResendPool> ResendBufferPool = new Dictionary<int, ResendPool>();
-        
+
         //IP地址设定
         private IPEndPoint RemoteIPEndPoint;
         //private IPEndPoint RemotePoint;
@@ -95,7 +95,7 @@ namespace UDPTran
             EndPoint AbReceiveEndPoint = (EndPoint)ReceiveEndPoint;
 
             //存储一些关于数据包的信息
-            byte[] TempInfo = new byte[packetUtil.PacketLength];
+            byte[] TempInfo = new byte[1040];
 
             Thread PackProcess;
             int dataSize;
@@ -106,9 +106,9 @@ namespace UDPTran
             {
 
                 dataSize = socket.ReceiveFrom(TempInfo, ref AbReceiveEndPoint);
-                byte[] infoByte = new byte[packetUtil.PacketLength];
+                byte[] infoByte = new byte[1040];
                 TempInfo.CopyTo(infoByte, 0);
-                if (dataSize == packetUtil.PacketLength)
+                if (dataSize == 1040)
                 {
                     ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
                     PackProcess = new Thread(PacketProcess);
@@ -219,7 +219,7 @@ namespace UDPTran
 
 
                     int count = packetUtil.GetCount(dataPool.dic[0]);
-                    int contextLength = packetUtil.GetContexLength(dataPool.dic[count-1]);
+                    int contextLength = packetUtil.GetContexLength(dataPool.dic[count - 1]);
                     int i = 0;
                     while (i < count - 1)
                     {
@@ -472,17 +472,17 @@ namespace UDPTran
             Socket socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
             int i = 0;
-            
-			foreach (var item in dic.Keys.ToList())
+
+            foreach (var item in dic.Keys.ToList())
             {
-				if (dic.ContainsKey(item))
-				{
-					ResendProcess(dic[item], item, endPoint, socket1);
-					if (i % 2 == 0)
-						Thread.Sleep(1);
-					i++;
-					//Thread.Sleep(1);
-				}
+                if (dic.ContainsKey(item))
+                {
+                    ResendProcess(dic[item], item, endPoint, socket1);
+                    if (i % 5 == 0)
+                        Thread.Sleep(1);
+                    i++;
+                    //Thread.Sleep(1);
+                }
             }
             socket1.Dispose();
         }
@@ -496,7 +496,7 @@ namespace UDPTran
             while (true)
             {
                 //一秒一次查询过程
-                Thread.Sleep(1000);               
+                Thread.Sleep(1000);
                 CheckProcess();
             }
         }
@@ -511,7 +511,11 @@ namespace UDPTran
                     ReceivePool.Remove(item.Key);
                 }
 
-               
+                if (ResendBufferPool.ContainsKey(item.Key))
+                {
+                    ResendProcess(item.Value);
+                    Console.WriteLine("lost processing");
+                }
                 if (item.Value.leftTime < 27000)
                 {
 
@@ -533,7 +537,7 @@ namespace UDPTran
             //SendInfo(ResendPool);
         }
 
-       
+
 
         private void ResendProcess(DataPool dataPool)
         {
