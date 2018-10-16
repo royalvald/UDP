@@ -13,7 +13,7 @@ namespace UDPTran
 	{
 		static void Main(string[] args)
 		{
-			Dispatcher dispatcher = new Dispatcher("192.168.109.33", 8090);
+			Dispatcher dispatcher = new Dispatcher("192.168.109.49", 8090);
 
 			/*dispatcher.setHostIPEndPoint("192.168.109.49", 8090);
             FileStream fs = new FileStream(@"H:\f1.pdf", FileMode.Open);

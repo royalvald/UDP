@@ -54,7 +54,7 @@ namespace UDPTran
             IPAddress iPAddress = IPAddress.Parse(IP);
             RemoteIPEndPoint = new IPEndPoint(iPAddress, port);
 
-            IPAddress selfAddress = IPAddress.Parse("192.168.109.49");
+            IPAddress selfAddress = IPAddress.Parse("192.168.109.33");
             hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
 
             //接收池与发送池初始化
@@ -215,7 +215,7 @@ namespace UDPTran
                 {
 
 
-                    FileStream f1 = File.Create(@"/home/charmer/test.pdf");
+                    FileStream f1 = File.Create(@"H:\test.pdf");
 
 
                     int count = packetUtil.GetCount(dataPool.dic[0]);

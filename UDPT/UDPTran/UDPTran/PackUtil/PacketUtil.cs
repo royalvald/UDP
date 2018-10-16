@@ -13,7 +13,7 @@ namespace UDPTran
         /// <summary>
         /// 包单个最大长度
         /// </summary>
-        private int packetLength = 2056;
+        private int packetLength = 1040;
         /// <summary>
         /// 头部信息长度大小
         /// </summary>
@@ -21,11 +21,11 @@ namespace UDPTran
         /// <summary>
         /// 数据段信息长度
         /// </summary>
-        private int maxContextLength = 2040;
-        private int headIDLength = 4;
-        private int headIndexLength = 4;
-        private int headPackCountLength = 4;
-        private int headContextLength = 4;
+        private static int maxContextLength = 1024;
+        private static int headIDLength = 4;
+        private static int headIndexLength = 4;
+        private static int headPackCountLength = 4;
+        private static int headContextLength = 4;
 
         public int PacketLength { get => packetLength; }
         public int HeadLength { get => headLength; }
@@ -169,13 +169,13 @@ namespace UDPTran
         public byte[] PackIntoFile(Dictionary<int, byte[]> dic)
         {
             List<byte> list = new List<byte>();
-            byte[] TempFile = new byte[MaxContextLength - 16];
+            byte[] TempFile = new byte[MaxContextLength];
             byte[] bytes = dic[0];
             int ContextLength;
             int TotalCount = GetCount(bytes);
             for (int i = 0; i < TotalCount - 1; i++)
             {
-                Array.Copy(dic[i], 16, TempFile, 0, MaxContextLength - 16);
+                Array.Copy(dic[i], 16, TempFile, 0, MaxContextLength );
                 list.AddRange(TempFile);
             }
             //以上仅仅处理了总包数-1数量的数据包，剩下的一个数据包因为自身数据特殊(即数据包可能存在填充数据)，所以应该分开处理
