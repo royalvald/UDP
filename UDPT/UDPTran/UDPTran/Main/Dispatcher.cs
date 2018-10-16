@@ -54,7 +54,7 @@ namespace UDPTran
             IPAddress iPAddress = IPAddress.Parse(IP);
             RemoteIPEndPoint = new IPEndPoint(iPAddress, port);
 
-            IPAddress selfAddress = IPAddress.Parse("192.168.109.33");
+            IPAddress selfAddress = IPAddress.Parse("192.168.109.49");
             hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
 
             //接收池与发送池初始化
@@ -215,7 +215,7 @@ namespace UDPTran
                 {
 
 
-                    FileStream f1 = File.Create(@"H:\test.pdf");
+                    FileStream f1 = File.Create(@"/home/charmer/test.pdf");
 
 
                     int count = packetUtil.GetCount(dataPool.dic[0]);
@@ -472,13 +472,17 @@ namespace UDPTran
             Socket socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
             int i = 0;
-            foreach (var item in dic)
+            
+			foreach (var item in dic.Keys.ToList())
             {
-                ResendProcess(item.Value, item.Key, endPoint, socket1);
-                if (i % 2 == 0)
-                    Thread.Sleep(1);
-                i++;
-                //Thread.Sleep(1);
+				if (dic.ContainsKey(item))
+				{
+					ResendProcess(dic[item], item, endPoint, socket1);
+					if (i % 2 == 0)
+						Thread.Sleep(1);
+					i++;
+					//Thread.Sleep(1);
+				}
             }
             socket1.Dispose();
         }
