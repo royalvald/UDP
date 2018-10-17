@@ -511,8 +511,10 @@ namespace UDPTran
                     ReceivePool.Remove(item.Key);
                 }
 
-                
-                if (item.Value.leftTime < 27000)
+                if (ResendBufferPool.ContainsKey(item.Key))
+                    ResendProcess(item.Value);
+
+                if (item.Value.leftTime < 27000&& !ResendBufferPool.ContainsKey(item.Key))
                 {
 
                     ResendProcess(item.Value);
