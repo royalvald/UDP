@@ -22,8 +22,8 @@ namespace UDPTran
             fs.Close();
 
             dispatcher.InfoSend(bytes);
-            Console.WriteLine("send completed");
-            */
+            Console.WriteLine("send completed");*/
+            
 		}
 	}
 }
