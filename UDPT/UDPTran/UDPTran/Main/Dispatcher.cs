@@ -114,6 +114,12 @@ namespace UDPTran
                     PackProcess = new Thread(PacketProcess);
                     PackProcess.Start(ReceiveTempData);
                 }
+                else if (dataSize == 1004)
+                {
+                    ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
+                    PackProcess = new Thread(ProcessArrayInfo);
+                    PackProcess.Start(ReceiveTempData);
+                }
                 else
                 {
                     ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
@@ -124,6 +130,10 @@ namespace UDPTran
             }
         }
 
+
+        /// <summary>
+        /// 指令处理方式
+        /// </summary>
         private void MsgService()
         {
             socketMsg = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -251,7 +261,11 @@ namespace UDPTran
         }
 
 
-        //收到请求包的处理方式
+
+        /// <summary>
+        /// 收到请求包的处理方式
+        /// </summary>
+        /// <param name="objects"></param>
         private void ProcessRequest(object objects)
         {
             //Console.WriteLine("pack lost processing");
@@ -265,7 +279,34 @@ namespace UDPTran
         }
 
 
+        private void ProcessArrayInfo(object objects)
+        {
+            byte[] bytes = ((ReceiveData)objects).bytes;
+            EndPoint tempEndPoint = ((ReceiveData)objects).endPoint;
+            IPEndPoint tempIPEndPoint = (IPEndPoint)tempEndPoint;
+            IPEndPoint tran = new IPEndPoint(tempIPEndPoint.Address, 8090);
+            Socket socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
+            int[] Info = new int[251];
+            int temp = 0;
+            int packID, index;
+            int position = 0;
+            while (position < 1003)
+            {
+                Info[temp] = BitConverter.ToInt32(bytes, position);
+                temp++;
+                position += 4;
+            }
+            packID = Info[0];
+
+            temp = 1;
+            while (temp <= 250)
+            {
+                byte[] infoBytes = sendOutPool[packID].dic[Info[temp]];
+                socket1.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, tran);
+                temp++;
+            }
+        }
 
         private void processReByte(byte[] bytes, EndPoint endPoint)
         {
@@ -404,7 +445,12 @@ namespace UDPTran
             socket1.SendTo(InfoBytes, tran);
         }
 
-
+        private void ResendArrayInfo(byte[] bytes, EndPoint endPoint, Socket socket1)
+        {
+            IPEndPoint iPEndPoint = (IPEndPoint)endPoint;
+            EndPoint tran = (EndPoint)(new IPEndPoint(iPEndPoint.Address, 8090));
+            socket1.SendTo(bytes, bytes.Length, SocketFlags.None, tran);
+        }
 
         //发送单个信息的方法
         private void Send(DataPool dataPool, EndPoint endPoint)
@@ -417,7 +463,7 @@ namespace UDPTran
             {
                 socket1.SendTo(item.Value, item.Value.Length, SocketFlags.None, endPoint);
                 //Thread.Sleep(1);
-                if (i % 2 == 0)
+                if (i % 8 == 0)
                     Thread.Sleep(1);
                 i++;
             }
@@ -471,9 +517,59 @@ namespace UDPTran
         {
             Socket socket1 = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket1.Bind(new IPEndPoint(hostIPEndPoint.Address, 8080));
-            int i = 0;
-
+            int i = 0, packID = 0;
+            bool isNull = true;
+            byte[] resend;
+            int tempCount = 4;
+            List<int> list = new List<int>();
             foreach (var item in dic.Keys.ToList())
+            {
+                if (isNull)
+                {
+                    packID = dic[item];
+                    isNull = false;
+                }
+
+                if (dic.ContainsKey(item))
+                {
+                    //ResendProcess(dic[item], item, endPoint, socket1);
+                    //if (i % 5 == 0)
+                    //    Thread.Sleep(1);
+                    //i++;
+                    //Thread.Sleep(1);
+
+                    list.Add(item);
+                    if (list.Count == 250)
+                    {
+                        tempCount = 4;
+                        resend = new byte[1004];
+                        foreach (var items in list)
+                        {
+                            Array.Copy(BitConverter.GetBytes(items), 0, resend, tempCount, 4);
+                            tempCount += 4;
+                        }
+                        Array.Copy(BitConverter.GetBytes(dic[item]), 0, resend, 0, 4);
+                        ResendArrayInfo(resend, endPoint, socket1);
+                        list.Clear();
+                    }
+                }
+            }
+
+            /* tempCount = 4;
+             resend = new byte[1004];
+             foreach (var items in list)
+             {
+                 if (isNull)
+                 {
+                     packID = dic[items];
+                     isNull = false;
+                 }
+                 Array.Copy(BitConverter.GetBytes(items), 0, resend, tempCount, 4);
+                 tempCount += 4;
+             }
+             Array.Copy(BitConverter.GetBytes(packID), 0, resend, 0, 4);
+             ResendArrayInfo(resend, endPoint, socket1);*/
+            foreach (var item in list)
             {
                 if (dic.ContainsKey(item))
                 {
@@ -481,7 +577,6 @@ namespace UDPTran
                     if (i % 5 == 0)
                         Thread.Sleep(1);
                     i++;
-                    //Thread.Sleep(1);
                 }
             }
             socket1.Dispose();
@@ -514,7 +609,7 @@ namespace UDPTran
                 if (ResendBufferPool.ContainsKey(item.Key))
                     ResendProcess(item.Value);
 
-                if (item.Value.leftTime < 27000&& !ResendBufferPool.ContainsKey(item.Key))
+                if (item.Value.leftTime < 27000 && !ResendBufferPool.ContainsKey(item.Key))
                 {
 
                     ResendProcess(item.Value);

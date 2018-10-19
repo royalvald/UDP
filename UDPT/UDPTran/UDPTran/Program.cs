@@ -15,14 +15,14 @@ namespace UDPTran
 		{
 			Dispatcher dispatcher = new Dispatcher("192.168.109.49", 8090);
 
-			/*dispatcher.setHostIPEndPoint("192.168.109.33", 8090);
-            FileStream fs = new FileStream(@"H:\f1.pdf", FileMode.Open);
+			dispatcher.setHostIPEndPoint("192.168.109.33", 8090);
+            FileStream fs = new FileStream(@"H:\f1.rar", FileMode.Open);
             byte[] bytes = new byte[fs.Length];
             fs.Read(bytes, 0, (int)fs.Length);
             fs.Close();
 
             dispatcher.InfoSend(bytes);
-            Console.WriteLine("send completed");*/
+            Console.WriteLine("send completed");
             
 		}
 	}
