@@ -114,7 +114,7 @@ namespace UDPTran
                     PackProcess = new Thread(PacketProcess);
                     PackProcess.Start(ReceiveTempData);
                 }
-                else if (dataSize == 1004)
+                else if (dataSize == 1008)
                 {
                     ReceiveTempData = new ReceiveData(infoByte, AbReceiveEndPoint);
                     PackProcess = new Thread(ProcessArrayInfo);
