@@ -305,6 +305,7 @@ namespace UDPTran
             {
                 byte[] infoBytes = sendOutPool[packID].dic[Info[temp]];
                 socket1.SendTo(infoBytes, infoBytes.Length, SocketFlags.None, tran);
+                //socket1.Dispose();
                 temp++;
                 if (temp % 7 == 0)
                     Thread.Sleep(1);
@@ -470,7 +471,7 @@ namespace UDPTran
                     Thread.Sleep(1);
                 i++;
             }
-
+            socket1.Dispose();
         }
 
         private void Send(byte[] bytes, EndPoint endPoint)
