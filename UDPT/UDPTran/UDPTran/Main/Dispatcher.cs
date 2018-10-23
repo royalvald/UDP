@@ -54,7 +54,7 @@ namespace UDPTran
             IPAddress iPAddress = IPAddress.Parse(IP);
             RemoteIPEndPoint = new IPEndPoint(iPAddress, port);
 
-            IPAddress selfAddress = IPAddress.Parse("192.168.109.33");
+            IPAddress selfAddress = IPAddress.Parse("192.168.109.25");
             hostIPEndPoint = new IPEndPoint(selfAddress, 8090);
 
             //接收池与发送池初始化
